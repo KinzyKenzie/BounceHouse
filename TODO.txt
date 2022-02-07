@@ -1,0 +1,7 @@
+==================
+=== TO DO LIST ===
+==================
+
+- Force framerate					(different loop-option)
+- Enforce element origin point
+- Implement object&inheritance
