@@ -1,6 +1,6 @@
 * {
 	
-	position: absolute;
+	position: fixed;
 	padding: 0px;
 	margin: 0px;
 	box-sizing: border-box;
@@ -35,5 +35,28 @@ body {
 	
 	background-color: red;
 	border-radius: 50%;
+	
+}
+
+.helper {
+	
+	top: 0px;
+	left: 0px;
+	
+	background-color: blue;
+	
+}
+
+#helperH {
+	
+	width: 200px;
+	height: 1px;
+	
+}
+
+#helperV {
+	
+	width: 1px;
+	height: 200px;
 	
 }

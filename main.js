@@ -2,10 +2,13 @@ const pageBody = document.querySelector('body');
 const renderScreen = document.getElementById('screen');
 
 const ball = document.getElementById('circle0');
+const helperH = document.getElementById('helperH');
+const helperV = document.getElementById('helperV');
+
 let ballSize = 40;
 
-const originX = 0;
-const originY = 0;
+const originX = 100;
+const originY = 100;
 
 const screenWidth = 720;
 const screenHeight = 480;
@@ -22,7 +25,7 @@ window.onload = () => {
 
 function startGameStructure() {
 	
-	let positionX = 20, positionY = 200;
+	let positionX = 80, positionY = 80;
 	let velocityX = 2, velocityY = 1;
 
 	function step() {
@@ -32,17 +35,23 @@ function startGameStructure() {
 			positionX = positionX + velocityX;
 			positionY = positionY + velocityY;
 			
-			if (positionX > screenWidth - ballSize || positionX < 0) {
+			if (positionX > screenWidth || positionX < 0) {
 				velocityX = velocityX * (-1);
 			}
 			
-			if (positionY > screenHeight - ballSize) {
+			if (positionY > screenHeight) {
 				velocityY = velocityY * (-1);
 			}
 			else velocityY++;
 			
-			ball.style.left = clamp(0, screenWidth - ballSize, positionX) + 'px';
-			ball.style.top = min(positionY, screenHeight - ballSize) + 'px';
+			ball.style.left = (originX + clamp(0, screenWidth, positionX) - (ballSize / 2)) + 'px';
+			ball.style.top = (originY + min(positionY, screenHeight) - (ballSize / 2)) + 'px';
+			
+			helperH.style.left = originX + (positionX - 0) + 'px';
+			helperH.style.top = originY + positionY + 'px';
+			
+			helperV.style.left = originX + positionX + 'px';
+			helperV.style.top = originY + (positionY - 0) + 'px';
 			
 		}
 		
