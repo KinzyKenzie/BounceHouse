@@ -1,29 +1,40 @@
-class Entity {
-	constructor(type, DOMObject) {
-		this.type = type;
-		this.DOMObject = DOMObject;
-	}
-	
-	update() {}
-	draw() {}
-}
-
-class Ball extends Entity {
-	constructor(DOMObject) {
-		super('Ball', DOMObject);
-	}
-	
-	update() {}
-	draw() {}
-}
+//class Entity {
+//	constructor(type, DOMObject) {
+//		this.type = type;
+//		this.DOMObject = DOMObject;
+//	}
+//	
+//	// Why oh why is this causing an error??
+//	//let offset;
+//	//let position;
+//	//let velocity;
+//	
+//	update() {}
+//	draw() {}
+//	
+//	move(posX, posY) {
+//		DOMObject.style.left = posX;
+//		DOMObject.style.top = posY;
+//	}
+//}
+//
+//class Ball extends Entity {
+//	constructor(DOMObject) {
+//		super('Ball', DOMObject);
+//	}
+//	
+//	update() {}
+//	draw() {}
+//}
 
 const pageBody = document.querySelector('body');
 const renderScreen = document.getElementById('screen');
 
 const block = document.getElementById('block0');
 const ball = document.getElementById('circle0');
-const helperH = document.getElementById('helperH');
-const helperV = document.getElementById('helperV');
+const cursor = document.getElementById('circle1');
+const helperH = document.getElementById('helperH0');
+const helperV = document.getElementById('helperV0');
 
 const ballSize = parseInt(getStyleAttribute(ball, 'height'));
 const ballRadius = ballSize * 0.5;
@@ -38,8 +49,12 @@ let velocityX = 2, velocityY = 1;
 
 let play = true;
 
-let player = new Ball(ball);
+let physicsObjects = {}
 
+//let player = new Entity('player', cursor);
+
+// The main function
+// This is where the fun happens
 window.onload = () => {
 	
 	const refreshRate = 1000 / 60;
@@ -58,6 +73,16 @@ window.onload = () => {
 };
 
 function init() {
+	
+	renderScreen.onmouseover = function(event){ cursor.style.display = 'initial' };
+	renderScreen.onmouseout = function(event){ cursor.style.display = 'none' };
+	
+	renderScreen.onmousemove = function(event){
+		
+		cursor.style.left = event.clientX;
+		cursor.style.top = event.clientY;
+		
+	};
 	
 	block.style.left = (parseInt(getStyleAttribute(block, 'left')) + originX) + 'px';
 	block.style.top = (parseInt(getStyleAttribute(block, 'top')) + originY) + 'px';
