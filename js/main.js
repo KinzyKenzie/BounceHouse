@@ -1,31 +1,68 @@
-//class Entity {
-//	constructor(type, DOMObject) {
-//		this.type = type;
-//		this.DOMObject = DOMObject;
-//	}
-//	
-//	// Why oh why is this causing an error??
-//	//let offset;
-//	//let position;
-//	//let velocity;
-//	
-//	update() {}
-//	draw() {}
-//	
-//	move(posX, posY) {
-//		DOMObject.style.left = posX;
-//		DOMObject.style.top = posY;
-//	}
-//}
-//
-//class Ball extends Entity {
-//	constructor(DOMObject) {
-//		super('Ball', DOMObject);
-//	}
-//	
-//	update() {}
-//	draw() {}
-//}
+// ===================
+// ===== CLASSES =====
+// ===================
+class Entity {
+	constructor( DOMObject ) {
+		this.DOMObject = DOMObject;
+		this.size = [
+			getStyleValue( DOMObject, 'width' ),
+			getStyleValue( DOMObject, 'height' )
+		];
+		this.offset = [ -(this.size[0] * 0.5), -(this.size[1] * 0.5) ];
+		this.position = [
+			getStyleValue( DOMObject, 'left' ),
+			getStyleValue( DOMObject, 'top' )
+		];
+		this.velocity = [ 0, 0 ];
+		this.gravity = false;
+		this.colliding = false;
+	}
+	
+	update() {
+		this.position[0] = this.position[0] + this.velocity[0];
+		this.position[1] = this.position[1] + this.velocity[1];
+	}
+	
+	draw() {
+	
+		if( !this.colliding ) {
+			this.DOMObject.style.left = ( originX + this.offset[0] + this.position[0] ) + 'px';
+			this.DOMObject.style.top = ( originY + this.offset[1] + this.position[1] ) + 'px';
+		} else {
+			
+			this.DOMObject.style.left = ( originX + this.offset[0] +
+				clamp( (this.size[0] * 0.5), screenWidth - (this.size[0] * 0.5), this.position[0] )) + 'px';
+				
+			this.DOMObject.style.top = ( originY + this.offset[1] +
+				min( this.position[1], screenHeight - (this.size[1] * 0.5) ) ) + 'px';
+			
+		}
+	}
+	
+	move(posX, posY) {
+		this.position[0] = posX;
+		this.position[1] = posY;
+	}
+}
+
+class Player extends Entity {
+	constructor( DOMObject ) {
+		super( DOMObject );
+	}
+	
+	update() {}
+	
+	draw() {
+		this.DOMObject.style.left = ( this.position[0] - (this.size[0] * 0.5) ) + 'px';
+		this.DOMObject.style.top = ( this.position[1] - (this.size[1] * 0.5) ) + 'px';
+	}
+}
+
+// ============================
+// ===== GLOBAL VARIABLES =====
+// ============================
+
+const DEBUG = true; // Draw and handle 'helper' guide lines
 
 const pageBody = document.querySelector('body');
 const renderScreen = document.getElementById('screen');
@@ -36,20 +73,21 @@ const cursor = document.getElementById('circle1');
 const helperH = document.getElementById('helperH0');
 const helperV = document.getElementById('helperV0');
 
-const ballSize = parseInt(getStyleAttribute(ball, 'height'));
+const ballSize = getStyleValue(ball, 'height');
 const ballRadius = ballSize * 0.5;
 
-const originX = parseInt(getStyleAttribute(renderScreen, 'left'));
-const originY = parseInt(getStyleAttribute(renderScreen, 'top'));
-const screenWidth = parseInt(getStyleAttribute(renderScreen, 'width'));
-const screenHeight = parseInt(getStyleAttribute(renderScreen, 'height'));
+const originX = getStyleValue(renderScreen, 'left');
+const originY = getStyleValue(renderScreen, 'top');
+const screenWidth = getStyleValue(renderScreen, 'width');
+const screenHeight = getStyleValue(renderScreen, 'height');
 
 let positionX = 80, positionY = (screenHeight / 3);
 let velocityX = 2, velocityY = 1;
+let gravity = 1;
 
 let play = true;
 
-let physicsObjects = {}
+let physicsObjects;
 
 //let player = new Entity('player', cursor);
 
@@ -63,50 +101,76 @@ window.onload = () => {
 	
 	setInterval(function () {
 		
-		if (!play) return;
+		//if( !play ) return;
+		if( play ) {
+			
+			//update();
+			//draw();
+			
+			// First (or 'standard') Update loop
+			for( let i = 0; i < physicsObjects.length; i++ ) {
+				
+				let entity = physicsObjects[i];
+					
+				entity.update();
+				
+				if( entity.gravity ) { checkCollision("world", entity); }
+				
+			}
+			
+			for( let i = 0; i < physicsObjects.length; i++ ) {
+				for( let j = i + 1; j < physicsObjects.length; j++ ) {
+					
+					// Check for collision between the two selected objects.
+					
+				}
+			}
+		}
 		
-		update();
-		draw();
+		for( let i = 0; i < physicsObjects.length; i++ ) { physicsObjects[i].draw(); }
 		
 	}, refreshRate);
+};
+
+window.onclick = () => {
+	
+	play = !play;
+	console.log("Play state set to " + play);
+	
+	if(play) renderScreen.style.backgroundColor = '#FFFFFF';
+	else  renderScreen.style.backgroundColor = '#D0D0D0';
 	
 };
 
 function init() {
 	
-	renderScreen.onmouseover = function(event){ cursor.style.display = 'initial' };
-	renderScreen.onmouseout = function(event){ cursor.style.display = 'none' };
+	physicsObjects = [ new Player( cursor ), new Entity( ball ), new Entity( block ) ];
+	physicsObjects[1].gravity = true;
+	physicsObjects[1].velocity[0] = 2;
 	
-	renderScreen.onmousemove = function(event){
+	//TEST
+	console.log( physicsObjects[0].position[0] + ", " + physicsObjects[0].position[1] );
+	console.log( physicsObjects[1].position[0] + ", " + physicsObjects[1].position[1] );
+	console.log( physicsObjects[2].position[0] + ", " + physicsObjects[2].position[1] );
+	
+	renderScreen.onmouseover = function(event) { cursor.style.display = 'initial' };
+	renderScreen.onmouseout = function(event) { cursor.style.display = 'none' };
+	
+	renderScreen.onmousemove = function(event) {
 		
-		cursor.style.left = event.clientX;
-		cursor.style.top = event.clientY;
+		//cursor.style.left = event.clientX;
+		//cursor.style.top = event.clientY;
+		physicsObjects[0].position[0] = event.clientX;
+		physicsObjects[0].position[1] = event.clientY;
 		
 	};
 	
-	block.style.left = (parseInt(getStyleAttribute(block, 'left')) + originX) + 'px';
-	block.style.top = (parseInt(getStyleAttribute(block, 'top')) + originY) + 'px';
+	block.style.left = ( getStyleValue( block, 'left' ) + originX ) + 'px';
+	block.style.top = ( getStyleValue( block, 'top' ) + originY ) + 'px';
 	
 }
 
-function update() {
-	
-	positionX = positionX + velocityX;
-	positionY = positionY + velocityY;
-	
-	if (positionX + ballRadius > screenWidth || positionX - ballRadius < 0) {
-		velocityX = velocityX * (-1);
-	}
-	
-	if (positionY + ballRadius > screenHeight) {
-		velocityY = velocityY * (-1);
-	}
-	else velocityY++;
-	
-	//checkCollision(block, positionX, positionY, velocityX, velocityY, ballRadius);
-	
-}
-
+// Deprecated. Saving for future reference.
 function draw() {
 	
 	ball.style.left = (originX + clamp(0, screenWidth, positionX) - ballRadius) + 'px';
@@ -120,47 +184,46 @@ function draw() {
 	
 }
 
-window.onclick = () => {
+function checkCollision(type, entity) {
 	
-	play = !play;
-	console.log("Play state set to " + play);
-	
-	if (play) renderScreen.style.backgroundColor = '#FFFFFF';
-	else  renderScreen.style.backgroundColor = '#D0D0D0';
-	
-};
-
-function checkCollision(block, positionX, positionY, velocityX, velocityY, ballRadius) {
-	
-	// This doesn't work, because the ball has a managed, known position, and ...
-	// ... the block has its position in screen-space. These differ by 100px on both axis.
-	// Also look at that list of passed-on variables LMAO
-	
-	if (positionX + ballRadius > parseInt(getStyleAttribute(block, 'left')) && 
-		positionX - ballRadius < parseInt(getStyleAttribute(block, 'left')) + parseInt(getStyleAttribute(block, 'width')) &&
-		positionY + ballRadius > parseInt(getStyleAttribute(block, 'top'))) {
+	if( type == "world" ) {
 		
-		if (positionX < parseInt(getStyleAttribute(block, 'left')) + 1) {
-			velocityX = velocityX * (-1);
+		if( entity.position[0] + (entity.size[0] * 0.5) > screenWidth || entity.position[0] - (entity.size[0] * 0.5) < 0 ) {
+			entity.velocity[0] = entity.velocity[0] * (-1);
+			entity.colliding = true;
 		}
+		
+		if( entity.position[1] + (entity.size[0] * 0.5) > screenHeight ) {
+			entity.velocity[1] = entity.velocity[1] * (-1);
+			entity.colliding = true;
+		}
+		else {
+			entity.velocity[1]++;
+			entity.colliding = false;
+		}
+		
 	}
 }
 
-// ===================
-// ===== GLOBALS =====
-// ===================
+// ============================
+// ===== GLOBAL FUNCTIONS =====
+// ============================
 
 function min(val1, val2) {
-	if (val1 < val2) return val1;
+	if(val1 < val2) return val1;
 	else return val2;
 }
 
 function clamp(min, max, val) {
-	if (val < min) return min;
-	if (val > max) return max;
+	if(val < min) return min;
+	if(val > max) return max;
 	return val;
 }
 
 function getStyleAttribute(entity, attribute) {
 	return window.getComputedStyle(entity).getPropertyValue(attribute);
+}
+
+function getStyleValue(entity, attribute) {
+	return parseInt(getStyleAttribute(entity, attribute));
 }
