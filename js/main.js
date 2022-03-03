@@ -58,11 +58,32 @@ class Player extends Entity {
 	}
 }
 
+class Helper {
+	constructor( DOMObjectA, DOMObjectB, reference ) {
+		this.helpX = new Entity( DOMObjectA );
+		this.helpY = new Entity( DOMObjectB );
+		this.trackedTarget = reference;
+	}
+	
+	update() {}
+	
+	draw() {
+		
+		this.helpX.style.left = ( this.trackedTarget.position[0] ) + 'px';
+		this.helpX.style.top = ( this.trackedTarget.position[1] ) + 'px';
+		
+		this.helpY.style.left = ( this.trackedTarget.position[0] ) + 'px';
+		this.helpY.style.top = ( this.trackedTarget.position[1] ) + 'px';
+		
+	}
+	
+}
+
 // ============================
 // ===== GLOBAL VARIABLES =====
 // ============================
 
-const DEBUG = true; // Draw and handle 'helper' guide lines
+const DEBUG = false; // Draw and handle 'helper' guide lines
 
 const pageBody = document.querySelector('body');
 const renderScreen = document.getElementById('screen');
@@ -88,6 +109,7 @@ let gravity = 1;
 let play = true;
 
 let physicsObjects;
+let helpers;
 
 //let player = new Entity('player', cursor);
 
@@ -114,7 +136,7 @@ window.onload = () => {
 					
 				entity.update();
 				
-				if( entity.gravity ) { checkCollision("world", entity); }
+				if( entity.gravity ) { checkCollision( "world", entity ); }
 				
 			}
 			
@@ -128,6 +150,10 @@ window.onload = () => {
 		}
 		
 		for( let i = 0; i < physicsObjects.length; i++ ) { physicsObjects[i].draw(); }
+		
+		if( DEBUG ) {
+			for( let i = 0; i < helpers.length; i++ ) { helpers[i].draw(); }
+		}
 		
 	}, refreshRate);
 };
@@ -148,10 +174,19 @@ function init() {
 	physicsObjects[1].gravity = true;
 	physicsObjects[1].velocity[0] = 2;
 	
-	//TEST
-	console.log( physicsObjects[0].position[0] + ", " + physicsObjects[0].position[1] );
-	console.log( physicsObjects[1].position[0] + ", " + physicsObjects[1].position[1] );
-	console.log( physicsObjects[2].position[0] + ", " + physicsObjects[2].position[1] );
+	//console.log("[DBG] " + helperH + " " + getStyleAttribute(helperH, left ));
+	//console.log("[DBG] " + helperV + " " + getStyleValue(helperV, top ));
+	
+	if( DEBUG ) {
+		
+		helpers = [ new Helper( helperH, helperV, physicsObjects[1] ) ];
+		
+		//TEST
+		console.log( physicsObjects[0].position[0] + ", " + physicsObjects[0].position[1] );
+		console.log( physicsObjects[1].position[0] + ", " + physicsObjects[1].position[1] );
+		console.log( physicsObjects[2].position[0] + ", " + physicsObjects[2].position[1] );
+		
+	}
 	
 	renderScreen.onmouseover = function(event) { cursor.style.display = 'initial' };
 	renderScreen.onmouseout = function(event) { cursor.style.display = 'none' };
