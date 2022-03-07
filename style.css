@@ -65,25 +65,26 @@ body {
 	
 }
 
-.helper {
+.helperH {
 	
 	top: 0px;
 	left: 0px;
 	
-	background-color: blue;
+	width: 200px;
+	height: 1px;
+	
+	background-color: green;
 	
 }
 
-#helperH {
+.helperV {
 	
-	width: 400px;
-	height: 2px;
+	top: 0px;
+	left: 0px;
 	
-}
-
-#helperV {
+	width: 1px;
+	height: 200px;
 	
-	width: 2px;
-	height: 400px;
+	background-color: red;
 	
 }

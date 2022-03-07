@@ -45,38 +45,29 @@ class Entity {
 	}
 }
 
-class Player extends Entity {
-	constructor( DOMObject ) {
-		super( DOMObject );
-	}
-	
-	update() {}
-	
-	draw() {
-		this.DOMObject.style.left = ( this.position[0] - (this.size[0] * 0.5) ) + 'px';
-		this.DOMObject.style.top = ( this.position[1] - (this.size[1] * 0.5) ) + 'px';
-	}
-}
-
 class Helper {
 	constructor( DOMObjectA, DOMObjectB, reference ) {
 		this.helpX = new Entity( DOMObjectA );
 		this.helpY = new Entity( DOMObjectB );
+		this.helpX.offset = [ 0, 0 ];
+		this.helpY.offset = [ 0, 0 ];
+		
 		this.trackedTarget = reference;
 	}
 	
-	update() {}
-	
-	draw() {
+	update() {
 		
-		this.helpX.style.left = ( this.trackedTarget.position[0] ) + 'px';
-		this.helpX.style.top = ( this.trackedTarget.position[1] ) + 'px';
-		
-		this.helpY.style.left = ( this.trackedTarget.position[0] ) + 'px';
-		this.helpY.style.top = ( this.trackedTarget.position[1] ) + 'px';
+		this.helpX.move( this.trackedTarget.position[0],
+						 this.trackedTarget.position[1] );
+		this.helpY.move( this.trackedTarget.position[0],
+						 this.trackedTarget.position[1] );
 		
 	}
 	
+	draw() {
+		this.helpX.draw();
+		this.helpY.draw();
+	}
 }
 
 // ============================
@@ -85,33 +76,24 @@ class Helper {
 
 const DEBUG = false; // Draw and handle 'helper' guide lines
 
-const pageBody = document.querySelector('body');
+//const pageBody = document.querySelector('body');
 const renderScreen = document.getElementById('screen');
 
 const block = document.getElementById('block0');
 const ball = document.getElementById('circle0');
 const cursor = document.getElementById('circle1');
-const helperH = document.getElementById('helperH0');
-const helperV = document.getElementById('helperV0');
-
-const ballSize = getStyleValue(ball, 'height');
-const ballRadius = ballSize * 0.5;
+const helperH = [ document.getElementById('helperH0'), document.getElementById('helperH1') ];
+const helperV = [ document.getElementById('helperV0'), document.getElementById('helperV1') ];
 
 const originX = getStyleValue(renderScreen, 'left');
 const originY = getStyleValue(renderScreen, 'top');
 const screenWidth = getStyleValue(renderScreen, 'width');
 const screenHeight = getStyleValue(renderScreen, 'height');
 
-let positionX = 80, positionY = (screenHeight / 3);
-let velocityX = 2, velocityY = 1;
-let gravity = 1;
-
 let play = true;
 
 let physicsObjects;
 let helpers;
-
-//let player = new Entity('player', cursor);
 
 // The main function
 // This is where the fun happens
@@ -123,17 +105,13 @@ window.onload = () => {
 	
 	setInterval(function () {
 		
-		//if( !play ) return;
 		if( play ) {
-			
-			//update();
-			//draw();
 			
 			// First (or 'standard') Update loop
 			for( let i = 0; i < physicsObjects.length; i++ ) {
 				
 				let entity = physicsObjects[i];
-					
+				
 				entity.update();
 				
 				if( entity.gravity ) { checkCollision( "world", entity ); }
@@ -146,6 +124,10 @@ window.onload = () => {
 					// Check for collision between the two selected objects.
 					
 				}
+			}
+			
+			if( DEBUG ) {
+				for( let i = 0; i < helpers.length; i++ ) { helpers[i].update(); }
 			}
 		}
 		
@@ -170,21 +152,28 @@ window.onclick = () => {
 
 function init() {
 	
-	physicsObjects = [ new Player( cursor ), new Entity( ball ), new Entity( block ) ];
+	physicsObjects = [ new Entity( cursor ), new Entity( ball ), new Entity( block ) ];
 	physicsObjects[1].gravity = true;
 	physicsObjects[1].velocity[0] = 2;
 	
-	//console.log("[DBG] " + helperH + " " + getStyleAttribute(helperH, left ));
-	//console.log("[DBG] " + helperV + " " + getStyleValue(helperV, top ));
-	
 	if( DEBUG ) {
 		
-		helpers = [ new Helper( helperH, helperV, physicsObjects[1] ) ];
+		helpers = [ new Helper( helperH[0], helperV[0], physicsObjects[0] ),
+					new Helper( helperH[1], helperV[1], physicsObjects[1] ) ];
 		
-		//TEST
-		console.log( physicsObjects[0].position[0] + ", " + physicsObjects[0].position[1] );
-		console.log( physicsObjects[1].position[0] + ", " + physicsObjects[1].position[1] );
-		console.log( physicsObjects[2].position[0] + ", " + physicsObjects[2].position[1] );
+		helpers[0].helpX.origin = [ 0, 0 ];
+		helpers[0].helpY.origin = [ 0, 0 ];
+		
+		console.log("[DBG] DEBUG MODE ON.");
+		
+	} else {
+		
+		console.log("[DBG] DEBUG MODE OFF");
+		
+		helperH[0].style.display = 'none';
+		helperH[1].style.display = 'none';
+		helperV[0].style.display = 'none';
+		helperV[1].style.display = 'none';
 		
 	}
 	
@@ -192,30 +181,12 @@ function init() {
 	renderScreen.onmouseout = function(event) { cursor.style.display = 'none' };
 	
 	renderScreen.onmousemove = function(event) {
-		
-		//cursor.style.left = event.clientX;
-		//cursor.style.top = event.clientY;
-		physicsObjects[0].position[0] = event.clientX;
-		physicsObjects[0].position[1] = event.clientY;
-		
+		physicsObjects[0].position[0] = event.clientX - originX;
+		physicsObjects[0].position[1] = event.clientY - originY;
 	};
 	
 	block.style.left = ( getStyleValue( block, 'left' ) + originX ) + 'px';
 	block.style.top = ( getStyleValue( block, 'top' ) + originY ) + 'px';
-	
-}
-
-// Deprecated. Saving for future reference.
-function draw() {
-	
-	ball.style.left = (originX + clamp(0, screenWidth, positionX) - ballRadius) + 'px';
-	ball.style.top = (originY + min(positionY, screenHeight - ballRadius) - ballRadius) + 'px';
-	
-	helperH.style.left = originX + (positionX - 201) + 'px';
-	helperH.style.top = originY + (positionY - 1) + 'px';
-	
-	helperV.style.left = originX + (positionX - 1) + 'px';
-	helperV.style.top = originY + (positionY - 201) + 'px';
 	
 }
 
