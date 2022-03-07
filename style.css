@@ -22,41 +22,69 @@ body {
 	top: 100px;
 	
 	background-color: white;
+	cursor: none;
+	
+}
+
+.rect {
+	
+	width: 80px;
+	height: 240px;
+	
+	left: 360px;
+	top: 360px;
+	
+	background-color: black;
 	
 }
 
 .circle {
 	
-	width: 40px;
-	height: 40px;
+	left: 140px;
+	top: 140px;
 	
-	left: 120px;
-	top: 120px;
-	
-	background-color: red;
 	border-radius: 50%;
 	
 }
 
-.helper {
+#circle0 {
 	
-	top: 0px;
-	left: 0px;
+	width: 40px;
+	height: 40px;
+	
+	background-color: red;
+	
+}
+
+#circle1 {
+	
+	width: 20px;
+	height: 20px;
 	
 	background-color: blue;
 	
 }
 
-#helperH {
+.helperH {
+	
+	top: 0px;
+	left: 0px;
 	
 	width: 200px;
 	height: 1px;
 	
+	background-color: green;
+	
 }
 
-#helperV {
+.helperV {
+	
+	top: 0px;
+	left: 0px;
 	
 	width: 1px;
 	height: 200px;
+	
+	background-color: red;
 	
 }
