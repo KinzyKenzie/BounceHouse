@@ -2,8 +2,9 @@
 // ===== CLASSES =====
 // ===================
 class Entity {
-	constructor( DOMObject ) {
+	constructor( DOMObject, type ) {
 		this.DOMObject = DOMObject;
+		this.type = type;
 		this.size = [
 			getStyleValue( DOMObject, 'width' ),
 			getStyleValue( DOMObject, 'height' )
@@ -39,7 +40,7 @@ class Entity {
 		}
 	}
 	
-	move(posX, posY) {
+	move( posX, posY ) {
 		this.position[0] = posX;
 		this.position[1] = posY;
 	}
@@ -114,7 +115,7 @@ window.onload = () => {
 				
 				entity.update();
 				
-				if( entity.gravity ) { checkCollision( "world", entity ); }
+				if( entity.gravity ) { checkWorldCollision( entity ); }
 				
 			}
 			
@@ -122,7 +123,16 @@ window.onload = () => {
 				for( let j = i + 1; j < physicsObjects.length; j++ ) {
 					
 					// Check for collision between the two selected objects.
-					
+					if( physicsObjects[i].type == physicsObjects[j].type ) {
+						
+						if( checkCollision(
+								physicsObjects[i].type, physicsObjects[i], physicsObjects[j]
+							) ) {
+							
+							resolveCollision( physicsObjects[i], physicsObjects[j] );
+							
+						}
+					}
 				}
 			}
 			
@@ -143,7 +153,7 @@ window.onload = () => {
 window.onclick = () => {
 	
 	play = !play;
-	console.log("Play state set to " + play);
+	//console.log( "[DBG] Play state set to " + play );
 	
 	if(play) renderScreen.style.backgroundColor = '#FFFFFF';
 	else  renderScreen.style.backgroundColor = '#D0D0D0';
@@ -152,11 +162,21 @@ window.onclick = () => {
 
 function init() {
 	
-	physicsObjects = [ new Entity( cursor ), new Entity( ball ), new Entity( block ) ];
+	console.log( "[DBG] Debug Mode = " + DEBUG.toString().toUpperCase() );
+	console.log( "[SYS] Initialising ..." );
+	
+	physicsObjects = [
+		new Entity( cursor, "ball" ),
+		new Entity( ball, "ball" ),
+		new Entity( block, "rect" )
+	];
+	
 	physicsObjects[1].gravity = true;
 	physicsObjects[1].velocity[0] = 2;
 	
 	if( DEBUG ) {
+		
+		//console.log( "[DBG] DEBUG MODE: ON" );
 		
 		helpers = [ new Helper( helperH[0], helperV[0], physicsObjects[0] ),
 					new Helper( helperH[1], helperV[1], physicsObjects[1] ) ];
@@ -164,11 +184,9 @@ function init() {
 		helpers[0].helpX.origin = [ 0, 0 ];
 		helpers[0].helpY.origin = [ 0, 0 ];
 		
-		console.log("[DBG] DEBUG MODE ON.");
-		
 	} else {
 		
-		console.log("[DBG] DEBUG MODE OFF");
+		//console.log( "[DBG] DEBUG MODE: OFF" );
 		
 		helperH[0].style.display = 'none';
 		helperH[1].style.display = 'none';
@@ -188,48 +206,86 @@ function init() {
 	block.style.left = ( getStyleValue( block, 'left' ) + originX ) + 'px';
 	block.style.top = ( getStyleValue( block, 'top' ) + originY ) + 'px';
 	
+	console.log( "[SYS] Done. Starting game." );
+	
 }
 
-function checkCollision(type, entity) {
+function checkWorldCollision( entity ) {
 	
-	if( type == "world" ) {
-		
-		if( entity.position[0] + (entity.size[0] * 0.5) > screenWidth || entity.position[0] - (entity.size[0] * 0.5) < 0 ) {
-			entity.velocity[0] = entity.velocity[0] * (-1);
-			entity.colliding = true;
-		}
-		
-		if( entity.position[1] + (entity.size[0] * 0.5) > screenHeight ) {
-			entity.velocity[1] = entity.velocity[1] * (-1);
-			entity.colliding = true;
-		}
-		else {
-			entity.velocity[1]++;
-			entity.colliding = false;
-		}
-		
+	if( entity.position[0] + (entity.size[0] * 0.5) > screenWidth || entity.position[0] - (entity.size[0] * 0.5) < 0 ) {
+		entity.velocity[0] = entity.velocity[0] * (-1);
+		entity.colliding = true;
 	}
+	
+	if( entity.position[1] + (entity.size[0] * 0.5) > screenHeight ) {
+		entity.velocity[1] = entity.velocity[1] * (-1);
+		entity.colliding = true;
+	}
+	else {
+		entity.velocity[1]++;
+		entity.colliding = false;
+	}
+	
+}
+
+function checkCollision( type, entityA, entityB ) {
+	
+	let distance = Math.floor( Math.sqrt(
+		Math.pow( Math.abs( entityA.position[0] - entityB.position[0] ), 2 ) +
+		Math.pow( Math.abs( entityA.position[1] - entityB.position[1] ), 2 )
+	) );
+	
+	if( distance < max( entityA.size[0], entityB.size[0] ) {
+		
+		console.log( "[DBG] Collision Type: " + type + ", distance: " + distance );
+		console.log( "[DBG] entityA = [" + entityA.position[0] + ", " + entityA.position[1] + "]" );
+		console.log( "[DBG] entityB = [" + entityB.position[0] + ", " + entityB.position[1] + "]" );
+		
+		//play = false;
+		
+		return true;
+	
+	}
+	
+	return false;
+}
+
+function resolveCollision( entityA, entityB ) {
+	
+	// If both entities are static, exit immediately.
+	if( !entityA.gravity && !entityB.gravity ) return;
+	
+	// If A is static and B is not, switch the variables around.
+	if( !entityA.gravity && entityB.gravity ) resolveCollision( entityB, entityA );
+	
+	
+	
 }
 
 // ============================
 // ===== GLOBAL FUNCTIONS =====
 // ============================
 
-function min(val1, val2) {
-	if(val1 < val2) return val1;
+function min( val1, val2 ) {
+	if( val1 < val2 ) return val1;
 	else return val2;
 }
 
-function clamp(min, max, val) {
-	if(val < min) return min;
-	if(val > max) return max;
+function max( val1, val2 ) {
+	if( val1 > val2 ) return val1;
+	else return val2;
+}
+
+function clamp( min, max, val ) {
+	if( val < min ) return min;
+	if( val > max ) return max;
 	return val;
 }
 
-function getStyleAttribute(entity, attribute) {
-	return window.getComputedStyle(entity).getPropertyValue(attribute);
+function getStyleAttribute( entity, attribute ) {
+	return window.getComputedStyle( entity ).getPropertyValue( attribute );
 }
 
-function getStyleValue(entity, attribute) {
-	return parseInt(getStyleAttribute(entity, attribute));
+function getStyleValue( entity, attribute ) {
+	return parseInt( getStyleAttribute( entity, attribute ));
 }
