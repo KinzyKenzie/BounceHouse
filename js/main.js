@@ -30,7 +30,7 @@ class Entity {
 			
 		} else if( this.timeout >= 0 ) {
 			
-			if( this.timeout > FPS_TARGET * 2 && isPointOnScreen( this.position ) ) this.setActive( true );
+			if( this.timeout > TARGET_FPS * 2 && isPointOnScreen( this.position ) ) this.setActive( true );
 			else this.timeout += 1;
 			
 		}
@@ -99,14 +99,16 @@ class Helper {
 // ============================
 // ===== GLOBAL VARIABLES =====
 // ============================
-const DEBUG = true; // Draw and handle 'helper' guide lines, write additional information to the console.
-const FPS_TARGET = 60;
+const DEBUG = false; // Draw and handle 'helper' guide lines, write additional information to the console.
+const TARGET_FPS = 60;
+const TARGET_SCORE = 10;
 const SPEED_LIMIT = 26;
 
 const renderScreen = document.getElementById('screen');
 const scoreReadout = document.getElementById('score');
+const textField = document.getElementById('textfield');
 const checkpoint = document.getElementById('checkpoint');
-const block = document.getElementById('block0');
+// const block = document.getElementById('block0');
 const ball = document.getElementById('circle0');
 const cursor = document.getElementById('circle1');
 
@@ -131,13 +133,14 @@ let scoreCount = 0;
 
 let physicsObjects;
 let helpers;
+let timestamps = [ '', '' ];
 
 // The main function
 // This is where the fun happens
 window.onload = () => {
 	
 	// Time to wait until the next frame is processed. Result is 60 frames per second.
-	const refreshRate = 1000 / FPS_TARGET;
+	const refreshRate = 1000 / TARGET_FPS;
 	
 	init();
 	
@@ -167,11 +170,26 @@ window.onload = () => {
 					if( !physicsObjects[j].active ) continue;
 					
 					// Check for collision between the two selected objects.
-					if( physicsObjects[i].type == physicsObjects[j].type &&
+					if( physicsObjects[i].type == 'ball' &&
+						physicsObjects[j].type == 'plyr' &&
 						checkCollision( physicsObjects[i], physicsObjects[j] ) ) {
+						
 						resolveCollision( physicsObjects[i], physicsObjects[j] );
+						
 					}
 					
+					if( physicsObjects[i].type == 'plyr' &&
+						physicsObjects[j].type == 'chck' &&
+						checkCollision( physicsObjects[i], physicsObjects[j] ) ) {
+							
+						incrementScore();
+						
+						if( scoreCount < TARGET_SCORE )
+							resetCheckpoint( physicsObjects[j], physicsObjects[i] );
+						else
+							timeToCelebrate();
+						
+					}
 				}
 			}
 		}
@@ -206,9 +224,9 @@ function init() {
 	
 	physicsObjects = [
 		new Entity( cursor, "ball" ),
-		new Entity( ball, "ball" ),
-		new Entity( checkpoint, "cp" ),
-		new Entity( block, "rect" )
+		new Entity( ball, "plyr" ),
+		new Entity( checkpoint, "chck" )/* ,
+		new Entity( block, "rect" ) */
 	];
 	
 	physicsObjects[1].gravity = true;
@@ -229,13 +247,11 @@ function init() {
 		physicsObjects[0].move( event.clientX - originX, event.clientY - originY );
 	};
 	
-	// physicsObjects[0].position[0] = event.clientX - originX;
-	// physicsObjects[0].position[1] = event.clientY - originY;
-	
-	block.style.left = ( getStyleValue( block, 'left' ) + originX ) + 'px';
-	block.style.top = ( getStyleValue( block, 'top' ) + originY ) + 'px';
+	// block.style.left = ( getStyleValue( block, 'left' ) + originX ) + 'px';
+	// block.style.top = ( getStyleValue( block, 'top' ) + originY ) + 'px';
 	
 	console.log( "[SYS] Done. Starting game." );
+	timestamps[0] = Date.now();
 	
 }
 
@@ -247,8 +263,8 @@ function resetCheckpoint( cp, player ) {
 		
 		iterations++;
 		
-		cp.position[0] = (cp.size[0] * 0.5) + ( Math.random() * ( screenWidth - cp.size[0] ));
-		cp.position[1] = (cp.size[1] * 0.5) + ( Math.random() * ( screenHeight - cp.size[1] ));
+		cp.position[0] = clamp( cp.size[0] * ( 2 - Math.floor( iterations * 0.4 )), screenWidth - cp.size[0], Math.random() * screenWidth );
+		cp.position[1] = clamp( cp.size[1] * ( 2 - Math.floor( iterations * 0.4 )), screenHeight - cp.size[1], Math.random() * screenHeight );
 		
 	} while ( Math.sqrt( Math.pow( Math.abs( cp.position[0] - player.position[0] ), 2 ) +
 		 Math.pow( Math.abs( cp.position[1] - player.position[1] ), 2 )) < cp.size[0] * 4 );
@@ -261,6 +277,23 @@ function resetCheckpoint( cp, player ) {
 function incrementScore() {
 	scoreCount++;
 	scoreReadout.innerHTML = scoreCount.toString();
+}
+
+function timeToCelebrate() {
+	
+	timestamps[1] = Date.now();
+	console.log( "[SYS] Game finished with time of " + ( timestamps[1] - timestamps[0] ));
+	
+	for( let i = 0; i < physicsObjects.length; i++ ) {
+		if( physicsObjects[i].type == 'plyr' ) continue;
+		
+		physicsObjects[i].active = false;
+		physicsObjects[i].DOMObject.style.display = 'none';
+	}
+	
+	textField.innerHTML = "You win!" +
+		"<br/>Time: " + millisToString( timestamps[1] - timestamps[0] );
+	
 }
 
 function resolveWorldCollision( entity ) {
@@ -276,7 +309,7 @@ function resolveWorldCollision( entity ) {
 		entity.velocity[1] = entity.velocity[1] * (-1);
 		
 		limitSpeed( entity );
-		incrementScore();
+		// incrementScore();
 		
 		val = true;
 	}
@@ -331,10 +364,6 @@ function resolveCollision( entityA, entityB ) {
 	];
 	entityB.setActive( false );
 	
-	//console.log( "Bounced with a power of " + entityMagnitude + "." );
-	
-	//play = false;
-	
 }
 
 // Limit the speed of the entity to the pre-determined maximum value.
@@ -379,6 +408,28 @@ function clamp( min, max, val ) {
 	if( val < min ) return min;
 	if( val > max ) return max;
 	return val;
+}
+
+function millisToString( val ) {
+	
+	var millis,
+		secnds,
+		minuts;
+	var remainder = val;
+	
+	millis = remainder - ( Math.floor( remainder / 1000 ) * 1000 );
+	remainder -= millis;
+	
+	secnds = ( remainder - ( Math.floor( remainder / 60000 ) * 60000 )) / 1000;
+	remainder -= secnds * 1000;
+	
+	minuts = ( remainder / 1000 ) / 60;
+	remainder -= minuts;
+	
+	return ( ( minuts.toString().length == 2 ? minuts.toString() : "0" + minuts.toString() ) + ":" +
+		( secnds.toString().length == 2 ? secnds.toString() : "0" + secnds.toString() ) + "." +
+		millis.toString() );
+	
 }
 
 function getStyleAttribute( entity, attribute ) {

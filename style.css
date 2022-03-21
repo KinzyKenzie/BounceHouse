@@ -15,12 +15,8 @@ body {
 
 p {
 	
-	top: 10px;
-	left: 100px;
-	
 	font-family: "Consolas", "Lucida Console", "Courier New";
 	font-size: 72;
-	color: white;
 	
 }
 
@@ -88,6 +84,15 @@ p {
 	
 }
 
+.score {
+	
+	top: 10px;
+	left: 100px;
+	
+	color: white;
+	
+}
+
 .screen {
 	
 	width: 720px;
@@ -98,6 +103,21 @@ p {
 	
 	background-color: white;
 	cursor: none;
+	
+}
+
+.text {
+	
+	pointer-events: none;
+	
+	width: 720px;
+	
+	left: 100px;
+	top: 200px;
+	
+	text-align: center;
+	
+	color: black;
 	
 }
 
