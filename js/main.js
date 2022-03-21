@@ -75,14 +75,13 @@ class Helper {
 // ===== GLOBAL VARIABLES =====
 // ============================
 
-const DEBUG = false; // Draw and handle 'helper' guide lines
+const DEBUG = false; // Draw and handle 'helper' guide lines, write additional information to the console.
 
-//const pageBody = document.querySelector('body');
 const renderScreen = document.getElementById('screen');
-
 const block = document.getElementById('block0');
 const ball = document.getElementById('circle0');
 const cursor = document.getElementById('circle1');
+
 const helperH = [ document.getElementById('helperH0'), document.getElementById('helperH1') ];
 const helperV = [ document.getElementById('helperV0'), document.getElementById('helperV1') ];
 
@@ -92,7 +91,6 @@ const screenWidth = getStyleValue(renderScreen, 'width');
 const screenHeight = getStyleValue(renderScreen, 'height');
 
 let play = true;
-
 let physicsObjects;
 let helpers;
 
@@ -100,7 +98,7 @@ let helpers;
 // This is where the fun happens
 window.onload = () => {
 	
-	const refreshRate = 1000 / 60;
+	const refreshRate = 1000 / 60; // Time to wait until the next frame is processed. Result is 60 frames per second.
 	
 	init();
 	
@@ -108,39 +106,45 @@ window.onload = () => {
 		
 		if( play ) {
 			
-			// First (or 'standard') Update loop
+			// Update: Move objects by active velocity
 			for( let i = 0; i < physicsObjects.length; i++ ) {
 				
 				let entity = physicsObjects[i];
 				
 				entity.update();
 				
-				if( entity.gravity ) { checkWorldCollision( entity ); }
-				
+				if( entity.gravity && resolveWorldCollision( entity )) {
+					
+					entity.colliding = true;
+					
+					console.log( "Entity height: " + ( screenHeight - entity.position[1] ) + "\nEntity velocity: " +
+						Math.sqrt( Math.pow( Math.abs( entity.velocity[0] ), 2 ) +
+							Math.pow( Math.abs( entity.velocity[1] ), 2 ))
+					);
+					
+				}
 			}
 			
+			// Late-Update: Check for collisions between Entities, and Entities-to-world.
 			for( let i = 0; i < physicsObjects.length; i++ ) {
 				for( let j = i + 1; j < physicsObjects.length; j++ ) {
 					
 					// Check for collision between the two selected objects.
-					if( physicsObjects[i].type == physicsObjects[j].type ) {
-						
-						if( checkCollision(
-								physicsObjects[i].type, physicsObjects[i], physicsObjects[j]
-							) ) {
-							
-							resolveCollision( physicsObjects[i], physicsObjects[j] );
-							
-						}
+					if( physicsObjects[i].type == physicsObjects[j].type &&
+						checkCollision( physicsObjects[i], physicsObjects[j] ) ) {
+						resolveCollision( physicsObjects[i], physicsObjects[j] );
 					}
+					
 				}
 			}
 			
+			// If necessary, move helper-objects to match position with their tracked entities.
 			if( DEBUG ) {
 				for( let i = 0; i < helpers.length; i++ ) { helpers[i].update(); }
 			}
 		}
 		
+		// Draw objects based on updated parameters
 		for( let i = 0; i < physicsObjects.length; i++ ) { physicsObjects[i].draw(); }
 		
 		if( DEBUG ) {
@@ -162,7 +166,7 @@ window.onclick = () => {
 
 function init() {
 	
-	console.log( "[DBG] Debug Mode = " + DEBUG.toString().toUpperCase() );
+	console.log( "[DBG] Debug Mode is " + ((DEBUG) ? "ON" : "OFF" ) );
 	console.log( "[SYS] Initialising ..." );
 	
 	physicsObjects = [
@@ -176,8 +180,6 @@ function init() {
 	
 	if( DEBUG ) {
 		
-		//console.log( "[DBG] DEBUG MODE: ON" );
-		
 		helpers = [ new Helper( helperH[0], helperV[0], physicsObjects[0] ),
 					new Helper( helperH[1], helperV[1], physicsObjects[1] ) ];
 		
@@ -185,8 +187,6 @@ function init() {
 		helpers[0].helpY.origin = [ 0, 0 ];
 		
 	} else {
-		
-		//console.log( "[DBG] DEBUG MODE: OFF" );
 		
 		helperH[0].style.display = 'none';
 		helperH[1].style.display = 'none';
@@ -210,55 +210,75 @@ function init() {
 	
 }
 
-function checkWorldCollision( entity ) {
+function resolveWorldCollision( entity ) {
+	
+	var val = false;
 	
 	if( entity.position[0] + (entity.size[0] * 0.5) > screenWidth || entity.position[0] - (entity.size[0] * 0.5) < 0 ) {
 		entity.velocity[0] = entity.velocity[0] * (-1);
-		entity.colliding = true;
+		// entity.colliding = true;
+		val = true;
 	}
 	
 	if( entity.position[1] + (entity.size[0] * 0.5) > screenHeight ) {
 		entity.velocity[1] = entity.velocity[1] * (-1);
-		entity.colliding = true;
+		// entity.colliding = true;
+		val = true;
 	}
 	else {
 		entity.velocity[1]++;
-		entity.colliding = false;
+		// entity.colliding = false;
 	}
+	
+	return val;
 	
 }
 
-function checkCollision( type, entityA, entityB ) {
+function checkCollision( entityA, entityB ) {
 	
-	let distance = Math.floor( Math.sqrt(
-		Math.pow( Math.abs( entityA.position[0] - entityB.position[0] ), 2 ) +
-		Math.pow( Math.abs( entityA.position[1] - entityB.position[1] ), 2 )
-	) );
+	// Use the pythagorean theorem to calculate the distance between the two entities.
+	// If the distance is shorter than the sum of both entities' radii, there is a collision.
 	
-	if( distance < max( entityA.size[0], entityB.size[0] ) {
-		
-		console.log( "[DBG] Collision Type: " + type + ", distance: " + distance );
-		console.log( "[DBG] entityA = [" + entityA.position[0] + ", " + entityA.position[1] + "]" );
-		console.log( "[DBG] entityB = [" + entityB.position[0] + ", " + entityB.position[1] + "]" );
-		
-		//play = false;
-		
+	if( Math.sqrt(
+			Math.pow( Math.abs( entityA.position[0] - entityB.position[0] ), 2 ) +
+			Math.pow( Math.abs( entityA.position[1] - entityB.position[1] ), 2 )
+		) < max( entityA.size[0], entityB.size[0] ))
 		return true;
-	
-	}
 	
 	return false;
 }
 
 function resolveCollision( entityA, entityB ) {
 	
-	// If both entities are static, exit immediately.
+	// If both entities are static exit immediately.
 	if( !entityA.gravity && !entityB.gravity ) return;
 	
-	// If A is static and B is not, switch the variables around.
-	if( !entityA.gravity && entityB.gravity ) resolveCollision( entityB, entityA );
+	// If A is static and B is not switch the variables around.
+	if( !entityA.gravity && entityB.gravity ) {
+		resolveCollision( entityB, entityA );
+		return;
+	}
 	
+	// Assume A is affected by gravity, B is static.
 	
+	var collisionVector = [
+		entityA.position[0] - entityB.position[0],
+		entityA.position[1] - entityB.position[1]
+	];
+	var collisionMagnitude = Math.sqrt(
+		Math.pow( Math.abs( collisionVector[0] ), 2 ) + Math.pow( Math.abs( collisionVector[1] ), 2 )
+	);
+	
+	var entityMagnitude = Math.sqrt(
+		Math.pow( Math.abs( entityA.velocity[0] ), 2 ) + Math.pow( Math.abs( entityA.velocity[1] ), 2 )
+	);
+	
+	entityA.velocity = [
+		entityMagnitude * ( collisionVector[0] / collisionMagnitude ),
+		entityMagnitude * ( collisionVector[1] / collisionMagnitude )
+	];
+	
+	// play = false;
 	
 }
 
