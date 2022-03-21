@@ -13,6 +13,17 @@ body {
 	
 }
 
+p {
+	
+	top: 10px;
+	left: 100px;
+	
+	font-family: "Consolas", "Lucida Console", "Courier New";
+	font-size: 72;
+	color: white;
+	
+}
+
 .circle {
 	
 	border-radius: 50%;
@@ -39,6 +50,8 @@ body {
 
 .helperH {
 	
+	display: none;
+	
 	top: 0px;
 	left: 0px;
 	
@@ -50,6 +63,8 @@ body {
 }
 
 .helperV {
+	
+	display: none;
 	
 	top: 0px;
 	left: 0px;
@@ -86,13 +101,27 @@ body {
 	
 }
 
-#circle0 {
+#checkpoint {
 	
-	left: 140px;
-	top: 140px;
+	display: none;
+	
+	left: 0px;
+	top: 0px;
+	
+	width: 80px;
+	height: 80px;
+	
+	background-color: #FF80FF;
+	
+}
+
+#circle0 {
 	
 	width: 40px;
 	height: 40px;
+	
+	left: 140px;
+	top: 140px;
 	
 	background-color: red;
 	

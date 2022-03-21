@@ -75,15 +75,18 @@ class Helper {
 		this.helpX.offset = [ 0, 0 ];
 		this.helpY.offset = [ 0, 0 ];
 		
+		DOMObjectA.style.display = 'initial';
+		DOMObjectB.style.display = 'initial';
+		
 		this.trackedTarget = reference;
 	}
 	
 	update() {
 		
 		this.helpX.move( this.trackedTarget.position[0] - this.helpX.size[0],
-						 this.trackedTarget.position[1] );
+			this.trackedTarget.position[1] );
 		this.helpY.move( this.trackedTarget.position[0],
-						 this.trackedTarget.position[1] - this.helpY.size[1] );
+			this.trackedTarget.position[1] - this.helpY.size[1] );
 		
 	}
 	
@@ -96,17 +99,27 @@ class Helper {
 // ============================
 // ===== GLOBAL VARIABLES =====
 // ============================
-
-const DEBUG = false; // Draw and handle 'helper' guide lines, write additional information to the console.
+const DEBUG = true; // Draw and handle 'helper' guide lines, write additional information to the console.
 const FPS_TARGET = 60;
+const SPEED_LIMIT = 26;
 
 const renderScreen = document.getElementById('screen');
+const scoreReadout = document.getElementById('score');
+const checkpoint = document.getElementById('checkpoint');
 const block = document.getElementById('block0');
 const ball = document.getElementById('circle0');
 const cursor = document.getElementById('circle1');
 
-const helperH = [ document.getElementById('helperH0'), document.getElementById('helperH1') ];
-const helperV = [ document.getElementById('helperV0'), document.getElementById('helperV1') ];
+const helperH = [
+	document.getElementById('helperH0'),
+	document.getElementById('helperH1'),
+	document.getElementById('helperH2')
+];
+const helperV = [
+	document.getElementById('helperV0'),
+	document.getElementById('helperV1'),
+	document.getElementById('helperV2')
+];
 
 const originX = getStyleValue(renderScreen, 'left');
 const originY = getStyleValue(renderScreen, 'top');
@@ -114,6 +127,8 @@ const screenWidth = getStyleValue(renderScreen, 'width');
 const screenHeight = getStyleValue(renderScreen, 'height');
 
 let play = true;
+let scoreCount = 0;
+
 let physicsObjects;
 let helpers;
 
@@ -121,7 +136,8 @@ let helpers;
 // This is where the fun happens
 window.onload = () => {
 	
-	const refreshRate = 1000 / FPS_TARGET; // Time to wait until the next frame is processed. Result is 60 frames per second.
+	// Time to wait until the next frame is processed. Result is 60 frames per second.
+	const refreshRate = 1000 / FPS_TARGET;
 	
 	init();
 	
@@ -147,7 +163,7 @@ window.onload = () => {
 				if( !physicsObjects[i].active ) continue;
 				
 				for( let j = i + 1; j < physicsObjects.length; j++ ) {
-				
+					
 					if( !physicsObjects[j].active ) continue;
 					
 					// Check for collision between the two selected objects.
@@ -178,7 +194,7 @@ window.onclick = () => {
 	play = !play;
 	//console.log( "[DBG] Play state set to " + play );
 	
-	if(play) renderScreen.style.backgroundColor = '#FFFFFF';
+	if( play ) renderScreen.style.backgroundColor = '#FFFFFF';
 	else  renderScreen.style.backgroundColor = '#D0D0D0';
 	
 };
@@ -191,27 +207,20 @@ function init() {
 	physicsObjects = [
 		new Entity( cursor, "ball" ),
 		new Entity( ball, "ball" ),
+		new Entity( checkpoint, "cp" ),
 		new Entity( block, "rect" )
 	];
 	
 	physicsObjects[1].gravity = true;
 	physicsObjects[1].velocity[0] = 2;
+	physicsObjects[2].DOMObject.style.display = 'initial';
+	
+	resetCheckpoint( physicsObjects[2], physicsObjects[1] );
 	
 	if( DEBUG ) {
-		
 		helpers = [ new Helper( helperH[0], helperV[0], physicsObjects[0] ),
-					new Helper( helperH[1], helperV[1], physicsObjects[1] ) ];
-		
-		helpers[0].helpX.origin = [ 0, 0 ];
-		helpers[0].helpY.origin = [ 0, 0 ];
-		
-	} else {
-		
-		helperH[0].style.display = 'none';
-		helperH[1].style.display = 'none';
-		helperV[0].style.display = 'none';
-		helperV[1].style.display = 'none';
-		
+					new Helper( helperH[1], helperV[1], physicsObjects[1] ),
+					new Helper( helperH[2], helperV[2], physicsObjects[2] ) ];
 	}
 	
 	renderScreen.onmouseover = function(event) { cursor.style.display = 'initial' };
@@ -230,39 +239,62 @@ function init() {
 	
 }
 
+function resetCheckpoint( cp, player ) {
+	
+	var iterations = 0;
+	
+	do {
+		
+		iterations++;
+		
+		cp.position[0] = (cp.size[0] * 0.5) + ( Math.random() * ( screenWidth - cp.size[0] ));
+		cp.position[1] = (cp.size[1] * 0.5) + ( Math.random() * ( screenHeight - cp.size[1] ));
+		
+	} while ( Math.sqrt( Math.pow( Math.abs( cp.position[0] - player.position[0] ), 2 ) +
+		 Math.pow( Math.abs( cp.position[1] - player.position[1] ), 2 )) < cp.size[0] * 4 );
+	
+	
+	if( DEBUG ) console.log( "[DBG] Finding a usable checkpoint-location took " + iterations + " attempt(s)." );
+	
+}
+
+function incrementScore() {
+	scoreCount++;
+	scoreReadout.innerHTML = scoreCount.toString();
+}
+
 function resolveWorldCollision( entity ) {
 	
 	var val = false;
 	
 	if( entity.position[0] + (entity.size[0] * 0.5) > screenWidth || entity.position[0] - (entity.size[0] * 0.5) < 0 ) {
 		entity.velocity[0] = entity.velocity[0] * (-1);
-		// entity.colliding = true;
 		val = true;
 	}
 	
-	if( entity.position[1] + (entity.size[0] * 0.5) > screenHeight ) {
+	if( entity.position[1] + (entity.size[0] * 0.5) > screenHeight && entity.velocity[1] > 0.0 ) {
 		entity.velocity[1] = entity.velocity[1] * (-1);
-		// entity.colliding = true;
+		
+		limitSpeed( entity );
+		incrementScore();
+		
 		val = true;
 	}
 	else {
 		entity.velocity[1]++;
-		// entity.colliding = false;
 	}
 	
 	return val;
 	
 }
 
-function checkCollision( entityA, entityB ) {
+// Use the pythagorean theorem to calculate the distance between two entities.
+// If the distance is shorter than the sum of both entities' radii, there is a collision.
+function checkCollision( entityA, entityB ) { // !! Only for use with ball-collisions !!
 	
-	// Use the pythagorean theorem to calculate the distance between the two entities.
-	// If the distance is shorter than the sum of both entities' radii, there is a collision.
-	
-	if( Math.sqrt(
-			Math.pow( Math.abs( entityA.position[0] - entityB.position[0] ), 2 ) +
-			Math.pow( Math.abs( entityA.position[1] - entityB.position[1] ), 2 )
-		) < max( entityA.size[0], entityB.size[0] ))
+	if( Math.sqrt( Math.pow( Math.abs( entityA.position[0] - entityB.position[0] ), 2 ) +
+		Math.pow( Math.abs( entityA.position[1] - entityB.position[1] ), 2 ) ) <
+		( entityA.size[0] * 0.5 ) + ( entityB.size[0] * 0.5 ) )
 		return true;
 	
 	return false;
@@ -305,10 +337,34 @@ function resolveCollision( entityA, entityB ) {
 	
 }
 
+// Limit the speed of the entity to the pre-determined maximum value.
+function limitSpeed( entity ) {
+	
+	var velocityMagnitude = Math.sqrt( Math.pow( Math.abs( entity.velocity[0] ), 2 ) +
+		Math.pow( Math.abs( entity.velocity[1] ), 2 ));
+	
+	if( DEBUG ) console.log( "[DBG] Player speed: " + velocityMagnitude );
+	
+	if( velocityMagnitude > SPEED_LIMIT ) {
+		entity.velocity[0] = entity.velocity[0] * ( SPEED_LIMIT / velocityMagnitude );
+		entity.velocity[1] = entity.velocity[1] * ( SPEED_LIMIT / velocityMagnitude );
+	}
+	
+}
+
+// Checks whether a vector-position falls inside the bounds of the game-screen.
+function isPointOnScreen( args ) {
+	return(
+		!( args[0] < 0 ||
+		args[0] > screenWidth ||
+		args[1] < 0 ||
+		args[1] > screenHeight )
+	);
+}
+
 // ============================
 // ===== GLOBAL FUNCTIONS =====
 // ============================
-
 function min( val1, val2 ) {
 	if( val1 < val2 ) return val1;
 	else return val2;
@@ -323,15 +379,6 @@ function clamp( min, max, val ) {
 	if( val < min ) return min;
 	if( val > max ) return max;
 	return val;
-}
-
-function isPointOnScreen( args ) {
-	return(
-		!( args[0] < 0 ||
-		args[0] > screenWidth ||
-		args[1] < 0 ||
-		args[1] > screenHeight )
-	);
 }
 
 function getStyleAttribute( entity, attribute ) {
