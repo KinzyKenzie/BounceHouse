@@ -13,55 +13,27 @@ body {
 	
 }
 
-.screen {
-	
-	width: 720px;
-	height: 480px;
-	
-	left: 100px;
-	top: 100px;
-	
-	background-color: white;
-	cursor: none;
-	
-}
-
-.rect {
-	
-	width: 80px;
-	height: 240px;
-	
-	left: 360px;
-	top: 360px;
-	
-	background-color: black;
-	
-}
-
 .circle {
 	
 	border-radius: 50%;
 	
 }
 
-#circle0 {
+.hiderH {
 	
-	left: 140px;
-	top: 140px;
+	width: 100%;
+	height: 100px;
 	
-	width: 40px;
-	height: 40px;
-	
-	background-color: red;
+	background-color: black;
 	
 }
 
-#circle1 {
+.hiderV {
 	
-	width: 20px;
-	height: 20px;
+	width: 100px;
+	height: 100%;
 	
-	background-color: blue;
+	background-color: black;
 	
 }
 
@@ -86,5 +58,79 @@ body {
 	height: 200px;
 	
 	background-color: red;
+	
+}
+
+.rect {
+	
+	width: 80px;
+	height: 240px;
+	
+	left: 360px;
+	top: 360px;
+	
+	background-color: black;
+	
+}
+
+.screen {
+	
+	width: 720px;
+	height: 480px;
+	
+	left: 100px;
+	top: 100px;
+	
+	background-color: white;
+	cursor: none;
+	
+}
+
+#circle0 {
+	
+	left: 140px;
+	top: 140px;
+	
+	width: 40px;
+	height: 40px;
+	
+	background-color: red;
+	
+}
+
+#circle1 {
+	
+	width: 20px;
+	height: 20px;
+	
+	background-color: blue;
+	
+}
+
+#hiderH0 {
+	
+	left: 0px;
+	top: 0px;
+	
+}
+
+#hiderV0 {
+	
+	left: 0px;
+	top: 0px;
+	
+}
+
+#hiderH1 {
+	
+	left: 0px;
+	top: 580px;
+	
+}
+
+#hiderV1 {
+	
+	left: 820px;
+	top: 0px;
 	
 }

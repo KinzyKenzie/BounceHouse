@@ -15,17 +15,29 @@ class Entity {
 			getStyleValue( DOMObject, 'top' )
 		];
 		this.velocity = [ 0, 0 ];
+		this.active = true;
 		this.gravity = false;
 		this.colliding = false;
+		this.timeout = -1;
 	}
 	
 	update() {
-		this.position[0] = this.position[0] + this.velocity[0];
-		this.position[1] = this.position[1] + this.velocity[1];
+		
+		if( this.active ) {
+			
+			this.position[0] = this.position[0] + this.velocity[0];
+			this.position[1] = this.position[1] + this.velocity[1];
+			
+		} else if( this.timeout >= 0 ) {
+			
+			if( this.timeout > FPS_TARGET * 2 && isPointOnScreen( this.position ) ) this.setActive( true );
+			else this.timeout += 1;
+			
+		}
 	}
 	
 	draw() {
-	
+		
 		if( !this.colliding ) {
 			this.DOMObject.style.left = ( originX + this.offset[0] + this.position[0] ) + 'px';
 			this.DOMObject.style.top = ( originY + this.offset[1] + this.position[1] ) + 'px';
@@ -33,7 +45,7 @@ class Entity {
 			
 			this.DOMObject.style.left = ( originX + this.offset[0] +
 				clamp( (this.size[0] * 0.5), screenWidth - (this.size[0] * 0.5), this.position[0] )) + 'px';
-				
+			
 			this.DOMObject.style.top = ( originY + this.offset[1] +
 				min( this.position[1], screenHeight - (this.size[1] * 0.5) ) ) + 'px';
 			
@@ -43,6 +55,16 @@ class Entity {
 	move( posX, posY ) {
 		this.position[0] = posX;
 		this.position[1] = posY;
+	}
+	
+	setActive( val ) {
+		this.active = val;
+		this.timeout = ( val ? -1 : 0 );
+		this.DOMObject.style.opacity = ( val ? "initial" : 0.2 );
+	}
+	
+	tryActive() {
+		if( this.timeout < 0 ) this.setActive( true );
 	}
 }
 
@@ -58,10 +80,10 @@ class Helper {
 	
 	update() {
 		
-		this.helpX.move( this.trackedTarget.position[0],
+		this.helpX.move( this.trackedTarget.position[0] - this.helpX.size[0],
 						 this.trackedTarget.position[1] );
 		this.helpY.move( this.trackedTarget.position[0],
-						 this.trackedTarget.position[1] );
+						 this.trackedTarget.position[1] - this.helpY.size[1] );
 		
 	}
 	
@@ -76,6 +98,7 @@ class Helper {
 // ============================
 
 const DEBUG = false; // Draw and handle 'helper' guide lines, write additional information to the console.
+const FPS_TARGET = 60;
 
 const renderScreen = document.getElementById('screen');
 const block = document.getElementById('block0');
@@ -98,7 +121,7 @@ let helpers;
 // This is where the fun happens
 window.onload = () => {
 	
-	const refreshRate = 1000 / 60; // Time to wait until the next frame is processed. Result is 60 frames per second.
+	const refreshRate = 1000 / FPS_TARGET; // Time to wait until the next frame is processed. Result is 60 frames per second.
 	
 	init();
 	
@@ -114,20 +137,18 @@ window.onload = () => {
 				entity.update();
 				
 				if( entity.gravity && resolveWorldCollision( entity )) {
-					
 					entity.colliding = true;
-					
-					console.log( "Entity height: " + ( screenHeight - entity.position[1] ) + "\nEntity velocity: " +
-						Math.sqrt( Math.pow( Math.abs( entity.velocity[0] ), 2 ) +
-							Math.pow( Math.abs( entity.velocity[1] ), 2 ))
-					);
-					
 				}
 			}
 			
 			// Late-Update: Check for collisions between Entities, and Entities-to-world.
 			for( let i = 0; i < physicsObjects.length; i++ ) {
+				
+				if( !physicsObjects[i].active ) continue;
+				
 				for( let j = i + 1; j < physicsObjects.length; j++ ) {
+				
+					if( !physicsObjects[j].active ) continue;
 					
 					// Check for collision between the two selected objects.
 					if( physicsObjects[i].type == physicsObjects[j].type &&
@@ -137,17 +158,13 @@ window.onload = () => {
 					
 				}
 			}
-			
-			// If necessary, move helper-objects to match position with their tracked entities.
-			if( DEBUG ) {
-				for( let i = 0; i < helpers.length; i++ ) { helpers[i].update(); }
-			}
 		}
 		
 		// Draw objects based on updated parameters
 		for( let i = 0; i < physicsObjects.length; i++ ) { physicsObjects[i].draw(); }
 		
 		if( DEBUG ) {
+			for( let i = 0; i < helpers.length; i++ ) { helpers[i].update(); }
 			for( let i = 0; i < helpers.length; i++ ) { helpers[i].draw(); }
 		}
 		
@@ -155,6 +172,8 @@ window.onload = () => {
 };
 
 window.onclick = () => {
+	
+	if( !DEBUG ) return;
 	
 	play = !play;
 	//console.log( "[DBG] Play state set to " + play );
@@ -166,7 +185,7 @@ window.onclick = () => {
 
 function init() {
 	
-	console.log( "[DBG] Debug Mode is " + ((DEBUG) ? "ON" : "OFF" ) );
+	console.log( "[DBG] Debug Mode is " + ( DEBUG ? "ON" : "OFF" ));
 	console.log( "[SYS] Initialising ..." );
 	
 	physicsObjects = [
@@ -197,11 +216,12 @@ function init() {
 	
 	renderScreen.onmouseover = function(event) { cursor.style.display = 'initial' };
 	renderScreen.onmouseout = function(event) { cursor.style.display = 'none' };
-	
 	renderScreen.onmousemove = function(event) {
-		physicsObjects[0].position[0] = event.clientX - originX;
-		physicsObjects[0].position[1] = event.clientY - originY;
+		physicsObjects[0].move( event.clientX - originX, event.clientY - originY );
 	};
+	
+	// physicsObjects[0].position[0] = event.clientX - originX;
+	// physicsObjects[0].position[1] = event.clientY - originY;
 	
 	block.style.left = ( getStyleValue( block, 'left' ) + originX ) + 'px';
 	block.style.top = ( getStyleValue( block, 'top' ) + originY ) + 'px';
@@ -277,8 +297,11 @@ function resolveCollision( entityA, entityB ) {
 		entityMagnitude * ( collisionVector[0] / collisionMagnitude ),
 		entityMagnitude * ( collisionVector[1] / collisionMagnitude )
 	];
+	entityB.setActive( false );
 	
-	// play = false;
+	//console.log( "Bounced with a power of " + entityMagnitude + "." );
+	
+	//play = false;
 	
 }
 
@@ -300,6 +323,15 @@ function clamp( min, max, val ) {
 	if( val < min ) return min;
 	if( val > max ) return max;
 	return val;
+}
+
+function isPointOnScreen( args ) {
+	return(
+		!( args[0] < 0 ||
+		args[0] > screenWidth ||
+		args[1] < 0 ||
+		args[1] > screenHeight )
+	);
 }
 
 function getStyleAttribute( entity, attribute ) {
