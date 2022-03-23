@@ -30,7 +30,7 @@ class Entity {
 			
 		} else if( this.timeout >= 0 ) {
 			
-			if( this.timeout > TARGET_FPS * 2 && isPointOnScreen( this.position ) ) this.setActive( true );
+			if( this.timeout > TARGET_FPS && isPointOnScreen( this.position ) ) this.setActive( true );
 			else this.timeout += 1;
 			
 		}
@@ -263,12 +263,12 @@ function resetCheckpoint( cp, player ) {
 		
 		iterations++;
 		
-		cp.position[0] = clamp( cp.size[0] * ( 2 - Math.floor( iterations * 0.4 )), screenWidth - cp.size[0], Math.random() * screenWidth );
-		cp.position[1] = clamp( cp.size[1] * ( 2 - Math.floor( iterations * 0.4 )), screenHeight - cp.size[1], Math.random() * screenHeight );
+		cp.position[0] = clamp( cp.size[0] * 2, screenWidth - cp.size[0], Math.random() * screenWidth );
+		cp.position[1] = clamp( cp.size[1] * 2, screenHeight - cp.size[1], Math.random() * screenHeight );
 		
 	} while ( Math.sqrt( Math.pow( Math.abs( cp.position[0] - player.position[0] ), 2 ) +
-		 Math.pow( Math.abs( cp.position[1] - player.position[1] ), 2 )) < cp.size[0] * 4 );
-	
+		 Math.pow( Math.abs( cp.position[1] - player.position[1] ), 2 )) <
+		 cp.size[0] * ( 4 - Math.floor( iterations * 0.3 )));
 	
 	if( DEBUG ) console.log( "[DBG] Finding a usable checkpoint-location took " + iterations + " attempt(s)." );
 	
